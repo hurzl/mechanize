@@ -43,6 +43,7 @@ import time
 import urllib
 import urlparse
 import bisect
+import ssl
 
 try:
     from cStringIO import StringIO
@@ -1147,12 +1148,15 @@ if hasattr(httplib, 'HTTPS'):
 
     class HTTPSConnectionFactory:
         def __init__(self, key_file, cert_file):
-            self._key_file = key_file
-            self._cert_file = cert_file
+            if not cert_file:
+                self.context = ssl._create_unverified_context()
+            else:
+                self.context = ssl.create_default_context()
+                self.context.load_cert_chain(cert_file, key_file)
         def __call__(self, hostport):
             return httplib.HTTPSConnection(
                 hostport,
-                key_file=self._key_file, cert_file=self._cert_file)
+                context=self.context)
 
     class HTTPSHandler(AbstractHTTPHandler):
 
